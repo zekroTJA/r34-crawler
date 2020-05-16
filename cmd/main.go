@@ -21,4 +21,6 @@ func main() {
 
 	crawler.GetAllAndSave(
 		params.Tags, params.Limit, params.Offset, params.Output, params.Meta)
+
+	log.Println("Finished.")
 }
