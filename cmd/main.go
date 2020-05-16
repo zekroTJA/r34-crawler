@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/zekroTJA/r34-crawler/internal/args"
 	"github.com/zekroTJA/r34-crawler/pkg/crawler"
@@ -19,8 +20,11 @@ func main() {
 			"images until no images can be found anymore!")
 	}
 
-	crawler.GetAllAndSave(
-		params.Tags, params.Limit, params.Offset, params.Output, params.Meta)
+	started := time.Now()
 
-	log.Println("Finished.")
+	crawler.GetAllAndSave(
+		params.Tags, params.Limit, params.Offset, params.Output,
+		params.Meta, params.Overwrite)
+
+	log.Printf("Finished (took %s).", time.Since(started).String())
 }

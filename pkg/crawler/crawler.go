@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"sync/atomic"
 )
@@ -41,7 +42,7 @@ func GetAll(tags []string, limit, offset int) (<-chan []Post, <-chan error) {
 	return cout, cerr
 }
 
-func GetAllAndSave(tags []string, limit, offset int, loc, meta string) {
+func GetAllAndSave(tags []string, limit, offset int, loc, meta string, overwrite bool) {
 	cposts, cerr := GetAll(tags, limit, offset)
 
 	allPosts := make([]Post, 0)
@@ -88,7 +89,15 @@ mainLoop:
 		limit = len(allPosts)
 	}
 
-	for i, p := range allPosts[:limit] {
+	allPosts = allPosts[:limit]
+
+	if !overwrite {
+		allPosts = filterNotExistingPosts(allPosts, loc)
+		limit = len(allPosts)
+		log.Printf("Only downloading %d images which are not existing (provide --overwrite flag to bypass this)", limit)
+	}
+
+	for i, p := range allPosts {
 		log.Printf("Get image [%d/%d] %s...", i+1, limit, p.Id)
 		if err := p.Download(loc); err != nil {
 			log.Printf("Failed download: %s", err.Error())
@@ -152,4 +161,20 @@ func createDirIfNotExist(loc string) error {
 	}
 
 	return err
+}
+
+func filterNotExistingPosts(posts []Post, loc string) []Post {
+	res := make([]Post, len(posts))
+
+	var i int
+	var err error
+	for _, p := range posts {
+		_, err = os.Stat(path.Join(loc, p.GetFileName()))
+		if os.IsNotExist(err) {
+			res[i] = p
+			i++
+		}
+	}
+
+	return res[:i]
 }

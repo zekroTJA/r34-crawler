@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 type Posts struct {
@@ -67,7 +68,8 @@ func (p Post) Download(loc string) error {
 }
 
 func (p Post) GetFileName() string {
-	return fmt.Sprintf("%s-%dx%d.%s", p.Id, p.Width, p.Height, getFileExt(p.FileURL))
+	timeStamp, _ := time.Parse(time.RubyDate, p.CreatedAt)
+	return fmt.Sprintf("%d-%s-%dx%d.%s", timeStamp.Unix(), p.Id, p.Width, p.Height, getFileExt(p.FileURL))
 }
 
 func getFileExt(fileName string) string {
