@@ -3,7 +3,6 @@ package crawler
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,10 +16,15 @@ import (
 )
 
 const (
-	rootUri  = "https://rule34.xxx/index.php?page=dapi&s=post&q=index&tags=%s&pid=%d&limit=%d"
+	// rootUri is the root HTTP uri of the provider
+	rootUri = "https://rule34.xxx/index.php?page=dapi&s=post&q=index&tags=%s&pid=%d&limit=%d"
+	// pageSize is the ammount of posts requested per page
+	// By definition of the rule34.xxx API, 100 is the maximum page size.
 	pageSize = 100
 )
 
+// Get tries to fetch a Post object containing all posts of the
+// defined page by tags and page size limit.
 func Get(tags []string, page, limit int) (*Posts, error) {
 	tagsStr := url.QueryEscape(strings.Join(tags, " "))
 	res, err := http.Get(fmt.Sprintf(rootUri, tagsStr, page, limit))
@@ -35,6 +39,12 @@ func Get(tags []string, page, limit int) (*Posts, error) {
 	return &posts, err
 }
 
+// GetAll tries to fetch all posts by dialing through pages
+// limited and offset by specified parameters.
+// This function returns a channel where each pages result is
+// pushed into as []*Post array.
+// If a page request fails, the error will be provided in the
+// returned error channel.
 func GetAll(tags []string, limit, offset int) (<-chan []*Post, <-chan error) {
 	cout := make(chan []*Post)
 	cerr := make(chan error)
@@ -44,6 +54,17 @@ func GetAll(tags []string, limit, offset int) (<-chan []*Post, <-chan error) {
 	return cout, cerr
 }
 
+// GetAllAndSave tries to fetch all images with specified tag limited
+// an offset by specified parameters and tries to save them to the
+// specified disk location.
+// When meta is porvided, a JSON file containing all meta information
+// of all collected images is saved on this file location.
+// When overwrite is false, only images not existent on the location
+// will be downloaded and saved. Else, all images will be downloaded and
+// existing ones will be owerwritten.
+// Workers defines the ammount of concurrent image downloads.
+//
+// This function will stop the program on failure.
 func GetAllAndSave(tags []string, limit, offset int, loc, meta string, overwrite bool, workers int) {
 	cposts, cerr := GetAll(tags, limit, offset)
 
@@ -98,9 +119,11 @@ mainLoop:
 		log.Printf("Only downloading %d images which are not existing (provide --overwrite flag to bypass this)", len(allPosts))
 	}
 
-	downloadWithWorkers(allPosts, loc, workers)
+	downloadWithWorkersBlocking(allPosts, loc, workers)
 }
 
+// getAll is a shorthand function for GetAll to be executed
+// in a seperate goroutine.
 func getAll(tags []string, limit, offset int, cout chan []*Post, cerr chan error) {
 	preflight, err := Get(tags, 0, 0)
 	if err != nil {
@@ -146,19 +169,9 @@ func getAll(tags []string, limit, offset int, cout chan []*Post, cerr chan error
 	}
 }
 
-func createDirIfNotExist(loc string) error {
-	s, err := os.Stat(loc)
-	if os.IsNotExist(err) {
-		return os.MkdirAll(loc, os.ModeDir)
-	}
-
-	if !s.IsDir() {
-		return errors.New("output path is not a directory")
-	}
-
-	return err
-}
-
+// filterNotExistingPosts returns a sub list of posts
+// which only contains post which are not present in
+// the provided loc directory.
 func filterNotExistingPosts(posts []*Post, loc string) []*Post {
 	res := make([]*Post, len(posts))
 
@@ -175,7 +188,12 @@ func filterNotExistingPosts(posts []*Post, loc string) []*Post {
 	return res[:i]
 }
 
-func downloadWithWorkers(posts []*Post, loc string, workers int) {
+// downloadWithWorkersBlocking tries to download all source images
+// of the provided posts to the specified loc directory with
+// the specified ammount of download workers.
+// This function will block until all download jobs are
+// finished.
+func downloadWithWorkersBlocking(posts []*Post, loc string, workers int) {
 	lPosts := len(posts)
 
 	pool := workerpool.New(workers)

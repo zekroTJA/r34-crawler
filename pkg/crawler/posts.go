@@ -7,21 +7,26 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 
+// Posts wraps an XML or JSON object of
+// a list of Posts with the Count and
+// Offset of posts.
 type Posts struct {
-	XMLName xml.Name `xml:"posts"`
+	XMLName xml.Name `xml:"posts" json:"-"`
 
-	Posts []*Post `xml:"post"`
+	Posts []*Post `xml:"post" json:"post"`
 
-	Count  int `xml:"count,attr"`
-	Offset int `xml:"offset,attr"`
+	Count  int `xml:"count,attr" json:"count"`
+	Offset int `xml:"offset,attr" json:"offset"`
 }
 
+// Post wraps an XML or JSON object of
+// an image post containing various metadata
+// about the post.
 type Post struct {
-	XMLName xml.Name `xml:"post"`
+	XMLName xml.Name `xml:"post" json:"-"`
 
 	Height        int    `xml:"height,attr" json:"height"`
 	Score         int    `xml:"score,attr" json:"score"`
@@ -48,6 +53,10 @@ type Post struct {
 	PreviewHeight int    `xml:"preview_height,attr" json:"preview_height"`
 }
 
+// Download tries to get the source image file
+// of the posts and tries to write it to the
+// specified loc with a generated name assembled
+// by UnixCreationDate-PostID-HeightxWidth.ext
 func (p *Post) Download(loc string) error {
 	res, err := http.Get(p.FileURL)
 	if err != nil {
@@ -67,12 +76,10 @@ func (p *Post) Download(loc string) error {
 	return err
 }
 
+// GetFileName assembles a unique file name for the
+// post by following pattern:
+// UnixCreationDate-PostID-HeightxWidth.ext
 func (p *Post) GetFileName() string {
 	timeStamp, _ := time.Parse(time.RubyDate, p.CreatedAt)
 	return fmt.Sprintf("%d-%s-%dx%d.%s", timeStamp.Unix(), p.Id, p.Width, p.Height, getFileExt(p.FileURL))
-}
-
-func getFileExt(fileName string) string {
-	i := strings.LastIndex(fileName, ".")
-	return fileName[i+1:]
 }
