@@ -14,7 +14,7 @@ import (
 type Posts struct {
 	XMLName xml.Name `xml:"posts"`
 
-	Posts []Post `xml:"post"`
+	Posts []*Post `xml:"post"`
 
 	Count  int `xml:"count,attr"`
 	Offset int `xml:"offset,attr"`
@@ -48,7 +48,7 @@ type Post struct {
 	PreviewHeight int    `xml:"preview_height,attr" json:"preview_height"`
 }
 
-func (p Post) Download(loc string) error {
+func (p *Post) Download(loc string) error {
 	res, err := http.Get(p.FileURL)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (p Post) Download(loc string) error {
 
 	fh, err := os.Create(fileName)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer fh.Close()
 
@@ -67,7 +67,7 @@ func (p Post) Download(loc string) error {
 	return err
 }
 
-func (p Post) GetFileName() string {
+func (p *Post) GetFileName() string {
 	timeStamp, _ := time.Parse(time.RubyDate, p.CreatedAt)
 	return fmt.Sprintf("%d-%s-%dx%d.%s", timeStamp.Unix(), p.Id, p.Width, p.Height, getFileExt(p.FileURL))
 }

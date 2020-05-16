@@ -24,7 +24,7 @@ func main() {
 
 	crawler.GetAllAndSave(
 		params.Tags, params.Limit, params.Offset, params.Output,
-		params.Meta, params.Overwrite)
+		params.Meta, params.Overwrite, params.Workers)
 
 	log.Printf("Finished (took %s).", time.Since(started).String())
 }

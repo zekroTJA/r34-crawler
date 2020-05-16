@@ -12,6 +12,8 @@ import (
 	"path"
 	"strings"
 	"sync/atomic"
+
+	"github.com/zekroTJA/r34-crawler/pkg/workerpool"
 )
 
 const (
@@ -33,8 +35,8 @@ func Get(tags []string, page, limit int) (*Posts, error) {
 	return &posts, err
 }
 
-func GetAll(tags []string, limit, offset int) (<-chan []Post, <-chan error) {
-	cout := make(chan []Post)
+func GetAll(tags []string, limit, offset int) (<-chan []*Post, <-chan error) {
+	cout := make(chan []*Post)
 	cerr := make(chan error)
 
 	go getAll(tags, limit, offset, cout, cerr)
@@ -42,10 +44,10 @@ func GetAll(tags []string, limit, offset int) (<-chan []Post, <-chan error) {
 	return cout, cerr
 }
 
-func GetAllAndSave(tags []string, limit, offset int, loc, meta string, overwrite bool) {
+func GetAllAndSave(tags []string, limit, offset int, loc, meta string, overwrite bool, workers int) {
 	cposts, cerr := GetAll(tags, limit, offset)
 
-	allPosts := make([]Post, 0)
+	allPosts := make([]*Post, 0)
 
 	log.Println("Collecting image info...")
 mainLoop:
@@ -93,19 +95,13 @@ mainLoop:
 
 	if !overwrite {
 		allPosts = filterNotExistingPosts(allPosts, loc)
-		limit = len(allPosts)
-		log.Printf("Only downloading %d images which are not existing (provide --overwrite flag to bypass this)", limit)
+		log.Printf("Only downloading %d images which are not existing (provide --overwrite flag to bypass this)", len(allPosts))
 	}
 
-	for i, p := range allPosts {
-		log.Printf("Get image [%d/%d] %s...", i+1, limit, p.Id)
-		if err := p.Download(loc); err != nil {
-			log.Printf("Failed download: %s", err.Error())
-		}
-	}
+	downloadWithWorkers(allPosts, loc, workers)
 }
 
-func getAll(tags []string, limit, offset int, cout chan []Post, cerr chan error) {
+func getAll(tags []string, limit, offset int, cout chan []*Post, cerr chan error) {
 	preflight, err := Get(tags, 0, 0)
 	if err != nil {
 		cerr <- err
@@ -163,8 +159,8 @@ func createDirIfNotExist(loc string) error {
 	return err
 }
 
-func filterNotExistingPosts(posts []Post, loc string) []Post {
-	res := make([]Post, len(posts))
+func filterNotExistingPosts(posts []*Post, loc string) []*Post {
+	res := make([]*Post, len(posts))
 
 	var i int
 	var err error
@@ -177,4 +173,31 @@ func filterNotExistingPosts(posts []Post, loc string) []Post {
 	}
 
 	return res[:i]
+}
+
+func downloadWithWorkers(posts []*Post, loc string, workers int) {
+	lPosts := len(posts)
+
+	pool := workerpool.New(workers)
+
+	go func() {
+		for {
+			<-pool.Results()
+		}
+	}()
+
+	for i, p := range posts {
+		pool.Push(func(id int, params ...interface{}) interface{} {
+			post := params[0].(*Post)
+			log.Printf("[worker #%d] Get image [%d/%d] %s...",
+				id, i+1, lPosts, post.Id)
+			if err := post.Download(loc); err != nil {
+				log.Printf("Failed download: %s", err.Error())
+			}
+			return id
+		}, p)
+	}
+	pool.Close()
+
+	pool.WaitBlocking()
 }

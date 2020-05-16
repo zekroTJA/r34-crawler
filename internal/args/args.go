@@ -11,6 +11,7 @@ type Args struct {
 	Limit     int      `help:"set a limit for images to be crawled" default:"-1"`
 	Offset    int      `help:"set an offset of how many images should be skipped"`
 	Overwrite bool     `help:"downloads and overwrites existing images" default:"false"`
+	Workers   int      `arg:"-w" help:"number of concurrent download workers" default:"5"`
 }
 
 func Parse() *Args {
