@@ -6,6 +6,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.16", features = ["derive"] }
-crossbeam = "0.8.4"
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
+indicatif = "0.17.8"
+num_cpus = "1.16.0"
 r34-api = { path = "../r34-api" }
 rayon = "1.10.0"
+spinoff = "0.8.0"

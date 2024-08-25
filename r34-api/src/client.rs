@@ -1,3 +1,5 @@
+use std::{fs::File, io, path::Path};
+
 use crate::{
     errors::{Error, Result},
     models::Post,
@@ -54,5 +56,16 @@ impl Client {
         }
 
         Ok(req.send()?.error_for_status()?.json()?)
+    }
+
+    pub fn download_post(&self, post: &Post, out_dir: &Path) -> Result<()> {
+        let mut res = self.client.get(&post.file_url).send()?.error_for_status()?;
+
+        let file_name = out_dir.join(post.get_file_name());
+        let mut file = File::create(file_name)?;
+
+        io::copy(&mut res, &mut file)?;
+
+        Ok(())
     }
 }

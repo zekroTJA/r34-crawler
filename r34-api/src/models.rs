@@ -25,3 +25,35 @@ pub struct Post {
     pub tags: String,
     pub width: usize,
 }
+
+impl Post {
+    pub fn get_file_name(&self) -> String {
+        let ext = get_file_ext(&self.file_url)
+            .or_else(|| get_file_ext(&self.image))
+            .unwrap_or("unknown");
+        format!("{}_{}x{}.{}", self.id, self.width, self.height, ext)
+    }
+}
+
+fn get_file_ext(v: &str) -> Option<&str> {
+    v.chars()
+        .rev()
+        .enumerate()
+        .find(|(_, c)| *c == '.')
+        .map(|(i, _)| &v[v.len() - i..])
+        .and_then(|v| if v.is_empty() { None } else { Some(v) })
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_get_file_ext() {
+        assert_eq!(get_file_ext("foo.bar"), Some("bar"));
+        assert_eq!(get_file_ext("foo.bar.baz"), Some("baz"));
+        assert_eq!(get_file_ext("foo.bar."), None);
+        assert_eq!(get_file_ext("foobarbaz"), None);
+        assert_eq!(get_file_ext(""), None);
+    }
+}
