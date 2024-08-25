@@ -38,6 +38,7 @@ struct Cli {
 
 enum Message {
     Success,
+    Skipped,
     Error(r34_api::errors::Error),
 }
 
@@ -114,8 +115,11 @@ fn main() -> Result<()> {
         all_posts
             .into_par_iter()
             .for_each_with((tx, client), |(tx, client), post| {
-                match client.download_post(&post, &cli.output) {
-                    Ok(_) => tx.send(Message::Success).unwrap(),
+                match client.download_post(&post, &cli.output, cli.overwrite) {
+                    Ok(downloaded) => match downloaded {
+                        true => tx.send(Message::Success).unwrap(),
+                        false => tx.send(Message::Skipped).unwrap(),
+                    },
                     Err(err) => tx.send(Message::Error(err)).unwrap(),
                 };
             })

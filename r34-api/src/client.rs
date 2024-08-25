@@ -58,14 +58,23 @@ impl Client {
         Ok(req.send()?.error_for_status()?.json()?)
     }
 
-    pub fn download_post(&self, post: &Post, out_dir: &Path) -> Result<()> {
+    pub fn download_post(
+        &self,
+        post: &Post,
+        out_dir: &Path,
+        force_overwrite: bool,
+    ) -> Result<bool> {
         let mut res = self.client.get(&post.file_url).send()?.error_for_status()?;
 
         let file_name = out_dir.join(post.get_file_name());
+        if !force_overwrite && file_name.exists() {
+            return Ok(false);
+        }
+
         let mut file = File::create(file_name)?;
 
         io::copy(&mut res, &mut file)?;
 
-        Ok(())
+        Ok(true)
     }
 }
