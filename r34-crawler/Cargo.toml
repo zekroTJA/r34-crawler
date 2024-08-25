@@ -1,0 +1,11 @@
+[package]
+name = "r34-crawler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.16", features = ["derive"] }
+crossbeam = "0.8.4"
+r34-api = { path = "../r34-api" }
+rayon = "1.10.0"

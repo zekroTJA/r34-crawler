@@ -1,0 +1,9 @@
+[package]
+name = "r34-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12.7", features = ["blocking", "json"] }
+serde = { version = "1.0.209", features = ["derive"] }
+thiserror = "1.0.63"
