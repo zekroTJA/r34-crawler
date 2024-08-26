@@ -38,6 +38,7 @@ impl Client {
         tags: &[T],
         limit: Option<usize>,
         page: Option<usize>,
+        last_id: Option<usize>,
     ) -> Result<Vec<Post>> {
         let mut req = self
             .client
@@ -53,6 +54,10 @@ impl Client {
 
         if let Some(page) = page {
             req = req.query(&[("pid", page)])
+        }
+
+        if let Some(last_id) = last_id {
+            req = req.query(&[("last_id", last_id)])
         }
 
         Ok(req.send()?.error_for_status()?.json()?)

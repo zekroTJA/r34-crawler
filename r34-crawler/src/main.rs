@@ -39,6 +39,10 @@ struct Cli {
     #[arg(short = 'O', long)]
     offset: Option<NonZeroUsize>,
 
+    /// Query posts created after the given post ID
+    #[arg(short, long)]
+    after_id: Option<usize>,
+
     /// The page size used per request when listing images
     #[arg(short, long, default_value = "250", value_parser = page_arg_parser)]
     page_size: usize,
@@ -78,7 +82,7 @@ fn main() -> Result<()> {
     let mut spinner = Spinner::new(spinners::Dots, "[0] Collecting posts info ...", Color::Cyan);
 
     for page in 0..usize::MAX {
-        let mut posts = client.posts(&cli.tags, Some(page_size), Some(page))?;
+        let mut posts = client.posts(&cli.tags, Some(page_size), Some(page), cli.after_id)?;
         let collected = posts.len();
         all_posts.append(&mut posts);
 
