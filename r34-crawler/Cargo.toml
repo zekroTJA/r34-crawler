@@ -9,10 +9,7 @@ clap = { version = "4.5.16", features = ["derive"] }
 clap-num = "1.1.1"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 indicatif = "0.17.8"
-num_cpus = "1.16.0"
 r34-api = { path = "../r34-api" }
 rayon = "1.10.0"
 serde_json = "1.0.127"
 spinoff = "0.8.0"
-
-

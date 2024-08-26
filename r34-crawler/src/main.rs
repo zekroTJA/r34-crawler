@@ -13,10 +13,6 @@ use std::{
     thread,
 };
 
-fn default_num_threads() -> NonZeroUsize {
-    NonZeroUsize::new(num_cpus::get()).unwrap()
-}
-
 fn page_arg_parser(v: &str) -> core::result::Result<usize, String> {
     clap_num::number_range(v, 1, 1000)
 }
@@ -52,7 +48,7 @@ struct Cli {
     overwrite: bool,
 
     /// Number of threads used for downloading images in parallel
-    #[arg(short, long, default_value_t = default_num_threads())]
+    #[arg(short, long, default_value = "4", short_alias = 'w', alias = "workers")]
     threads: NonZeroUsize,
 
     /// Store image post metadata in the given file as JSON
