@@ -35,12 +35,15 @@ You can specify an ammount of `workers` with the `--workers` *(or `-w`)* flag. T
 
 I've tested around with some ammounts of workers and got following results:
 
-*Tests were executed on a 100 MBit/s downstream. Of course, the speeds are also depending on the image sizes and compression rates as same as the speed of the machine and drives.*
-| n Workers | t for 200 images | t / image |
-|-----------|------------------|-----------|
-| 1 | 39,13s | 0,196s |
-| 5 | 27,44s | 0,137s |
-| 50 | 27,39s | 0,137s |
+*Tests were executed on a 250 MiB/s downstream. Of course, the speeds are also depending on the image sizes and compression rates as same as the speed of the machine and drives.*
+
+| Threads | Rust Version | Go Version |
+|---------|--------------|------------|
+| 1       | 27.888s      | 30.358s    |
+| 2       | 22.794s      | 24.962s    |
+| 4       | 20.889s      | 21.353s    |
+| 8       | 22.362s      | 20.517s    |
+| 16      | 20.379s      | 20.505s    |
 
 ## Self-Compiling
 
