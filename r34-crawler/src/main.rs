@@ -81,13 +81,21 @@ fn main() -> Result<()> {
 
     let mut spinner = Spinner::new(spinners::Dots, "[0] Collecting posts info ...", Color::Cyan);
 
-    for page in 0..usize::MAX {
+    let (start_page, rest_offset) = match cli.offset {
+        Some(offset) => {
+            let start_page = offset.get() / page_size;
+            (start_page, offset.get() - (start_page * page_size))
+        }
+        None => (0, 0),
+    };
+
+    for page in start_page..usize::MAX {
         let mut posts = client.posts(&cli.tags, Some(page_size), Some(page), cli.after_id)?;
         let collected = posts.len();
         all_posts.append(&mut posts);
 
-        if all_posts.len() >= limit {
-            all_posts = all_posts[..limit].to_vec();
+        if all_posts.len() >= limit + rest_offset {
+            all_posts = all_posts[rest_offset..limit + rest_offset].to_vec();
             break;
         }
 
