@@ -1,5 +1,3 @@
-use std::{fs, num::NonZeroUsize, path::PathBuf, sync::Arc, thread};
-
 use anyhow::Result;
 use clap::Parser;
 use crossbeam::channel;
@@ -7,31 +5,43 @@ use indicatif::{ProgressBar, ProgressStyle};
 use r34_api::client::Client;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use spinoff::{spinners, Color, Spinner};
+use std::{fs, num::NonZeroUsize, path::PathBuf, sync::Arc, thread};
 
 fn default_num_threads() -> NonZeroUsize {
     NonZeroUsize::new(num_cpus::get()).unwrap()
 }
 
+fn page_arg_parser(v: &str) -> core::result::Result<usize, String> {
+    clap_num::number_range(v, 1, 1000)
+}
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    /// Image tags
     tags: Vec<String>,
 
+    /// The output directory for downloaded images
     #[arg(short, long, default_value = "output")]
     output: PathBuf,
 
+    /// Number of images to be collected
     #[arg(short, long)]
     limit: Option<NonZeroUsize>,
 
+    /// Offset to be skipped in collected images
     #[arg(short = 'O', long)]
     offset: Option<NonZeroUsize>,
 
-    #[arg(short, long, default_value = "250")]
+    /// The page size used per request when listing images
+    #[arg(short, long, default_value = "250", value_parser = page_arg_parser)]
     page_size: NonZeroUsize,
 
+    /// Force overwriting already downloaded images
     #[arg(long)]
     overwrite: bool,
 
+    /// Number of threads used for downloading images in parallel
     #[arg(short, long, default_value_t = default_num_threads())]
     threads: NonZeroUsize,
 }
