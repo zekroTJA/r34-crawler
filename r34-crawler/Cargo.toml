@@ -13,9 +13,4 @@ r34-api = { path = "../r34-api" }
 rayon = "1.10.0"
 spinoff = "0.8.0"
 
-[profile.release]
-strip = true
-opt-level = "s"
-codegen-units = 1
-lto = true
-panic = "unwind"
+
