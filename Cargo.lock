@@ -900,6 +900,7 @@ dependencies = [
  "num_cpus",
  "r34-api",
  "rayon",
+ "serde_json",
  "spinoff",
 ]
 

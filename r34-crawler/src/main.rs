@@ -5,7 +5,13 @@ use indicatif::{ProgressBar, ProgressStyle};
 use r34_api::client::Client;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use spinoff::{spinners, Color, Spinner};
-use std::{fs, num::NonZeroUsize, path::PathBuf, sync::Arc, thread};
+use std::{
+    fs::{self, File},
+    num::NonZeroUsize,
+    path::PathBuf,
+    sync::Arc,
+    thread,
+};
 
 fn default_num_threads() -> NonZeroUsize {
     NonZeroUsize::new(num_cpus::get()).unwrap()
@@ -35,7 +41,7 @@ struct Cli {
 
     /// The page size used per request when listing images
     #[arg(short, long, default_value = "250", value_parser = page_arg_parser)]
-    page_size: NonZeroUsize,
+    page_size: usize,
 
     /// Force overwriting already downloaded images
     #[arg(long)]
@@ -44,6 +50,10 @@ struct Cli {
     /// Number of threads used for downloading images in parallel
     #[arg(short, long, default_value_t = default_num_threads())]
     threads: NonZeroUsize,
+
+    /// Store image post metadata in the given file as JSON
+    #[arg(short, long)]
+    meta: Option<PathBuf>,
 }
 
 enum Message {
@@ -61,7 +71,7 @@ fn main() -> Result<()> {
         fs::create_dir_all(&cli.output)?;
     }
 
-    let page_size = cli.page_size.get();
+    let page_size = cli.page_size;
     let mut all_posts = vec![];
     let limit = cli.limit.map(|v| v.get()).unwrap_or(usize::MAX);
 
@@ -85,6 +95,17 @@ fn main() -> Result<()> {
     }
 
     spinner.stop_with_message(&format!("✔️  {} posts collected.", all_posts.len()));
+
+    if let Some(meta_dir) = cli.meta {
+        let mut spinner = Spinner::new(spinners::Dots, "Writing meta file ...", Color::Cyan);
+
+        let f = File::create(&meta_dir)
+            .map_err(|err| anyhow::anyhow!("failed creating meta file: {err}"))?;
+        serde_json::to_writer_pretty(f, &all_posts)
+            .map_err(|err| anyhow::anyhow!("failed encoding meta JSON: {err}"))?;
+
+        spinner.stop_with_message(&format!("✔️  Meta file written to {}.", meta_dir.display()));
+    }
 
     let (tx, rx) = channel::unbounded::<Message>();
 
