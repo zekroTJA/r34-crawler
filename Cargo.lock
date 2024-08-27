@@ -871,7 +871,7 @@ dependencies = [
 
 [[package]]
 name = "r34-api"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "reqwest",
  "serde",
@@ -880,7 +880,7 @@ dependencies = [
 
 [[package]]
 name = "r34-crawler"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "clap",
