@@ -1,69 +1,48 @@
 # r34-crawler
 
-> This project was created for self-education purpose because I wanted to try to fetch an XML API and working a bit with worker pools and sync groups. ;)
+A simple, self-contained, CLI tool to fetch and download images from [rule34.xxx](https://rule34.xxx) **(Attention: This site definetly contains NSFW content!)**.
 
-A simple, self-contained, CLI tool to fetch and download images from [rule34.xxx](https://rule34.xxx) **(Attention: Site definetly contains NSFW content!)**.
+You can download the latest release binaries from the [releases page](https://github.com/zekroTJA/r34-crawler/releases).
 
-You can download the latest build from the automated [**Actions CI Builds**](https://github.com/zekroTJA/r34-crawler/actions).  
-Just select the latest succeed build and click on `Build Artifacts`. This will download an archive containing a pre-compiled executable for linux and windows (amd64).
+Alternatively, you can also install the tool using cargo when you have the Rust toolchain installed.
+```
+cargo install --git https://github.com/zekroTJA/r34-crawler r34-crawler
+```
 
-If you want to compile it yourself, folow the instructions [below](#self-compiling).
-
-Then, just open up a console *(bash or powershell)* and execute the binary with the `--help` flag:
+Then, just open up a terminal *(bash or powershell)* and execute the binary with the `--help` flag:
 
 ```
-Usage: r34-crawler [--output OUTPUT] [--meta META] [--limit LIMIT] [--offset OFFSET] [--overwrite] [--workers WORKERS] [TAGS [TAGS ...]]
+Usage: r34-crawler.exe [OPTIONS] [TAGS]...
 
-Positional arguments:
-  TAGS                   image tags to look for
+Arguments:
+  [TAGS]...  Image tags
 
 Options:
-  --output OUTPUT, -o OUTPUT
-                         output directory [default: ./output]
-  --meta META, -m META   file to safe metadata in (JSON file format)
-  --limit LIMIT          set a limit for images to be crawled [default: -1]
-  --offset OFFSET        set an offset of how many images should be skipped
-  --overwrite            downloads and overwrites existing images [default: false]
-  --workers WORKERS, -w WORKERS
-                         number of concurrent download workers [default: 5]
-  --help, -h             display this help and exit
+  -o, --output <OUTPUT>        The output directory for downloaded images [default: output]
+  -l, --limit <LIMIT>          Number of images to be collected
+  -O, --offset <OFFSET>        Offset to be skipped in collected images
+  -a, --after-id <AFTER_ID>    Query posts created after the given post ID
+  -p, --page-size <PAGE_SIZE>  The page size used per request when listing images [default: 250]
+      --overwrite              Force overwriting already downloaded images
+  -t, --threads <THREADS>      Number of threads used for downloading images in parallel [default: 4]
+  -m, --meta <META>            Store image post metadata in the given file as JSON
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
 
-The options and flags are *(hopefully)* self-describing.
+You can specify an ammount of `threads` with the `--threads` *(or `-w`)* flag. That means, if you specify 4 threads, for example, that 4 images will be downloaded in parallel. 4 threads is also the default value, if not further specified, because it yields the best results in my personal tests. Your mileage may vary depending on your system performance and your network speed.
 
-You can specify an ammount of `workers` with the `--workers` *(or `-w`)* flag. That means, if you specify 5 workers, for example, that 5 images will be downloaded in parallel. If you have a really slow or instable connection, you should set this to `2` or `1`.
+*Tests were executed on a 250 MBit/s downstream. Of course, the speeds are also depending on the image sizes and compression rates as same as the speed of the machine and drives.*
 
-I've tested around with some ammounts of workers and got following results:
-
-*Tests were executed on a 250 MiB/s downstream. Of course, the speeds are also depending on the image sizes and compression rates as same as the speed of the machine and drives.*
-
-| Threads | Rust Version | Go Version |
-|---------|--------------|------------|
-| 1       | 27.888s      | 30.358s    |
-| 2       | 22.794s      | 24.962s    |
-| 4       | 20.889s      | 21.353s    |
-| 8       | 22.362s      | 20.517s    |
-| 16      | 20.379s      | 20.505s    |
-
-## Self-Compiling
-
-Of course, you need to have the go compiler toolchain installed.
-See: https://golang.org/doc/install
-
-First of all, clone the repository and cd into the source dir:
-```
-$ git clone https://github.com/zekroTJA/r34-crawler
-$ cd r34-crawler
-```
-
-Then, compile the source files:
-```
-$ go build -o bin/r34-crawler cmd/main.go
-```
-
-*Go build should atiomatically download all nessecary dependencies. If not, execute `go mod download` before.*
+| Threads | Rust Version | *(old) Go Version* |
+|---------|--------------|--------------------|
+| 1       | 27.888s      | *30.358s*          |
+| 2       | 22.794s      | *24.962s*          |
+| 4       | 20.889s      | *21.353s*          |
+| 8       | 22.362s      | *20.517s*          |
+| 16      | 20.379s      | *20.505s*          |
 
 ---
 
-© 2020 Ringo Hoffmann (zekro Development)  
+© 2024 Ringo Hoffmann (zekro Development)  
 Covered by the MIT Licence.
