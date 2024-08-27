@@ -25,9 +25,10 @@ jobs:
           - os_name: Linux-arm
             os: ubuntu-20.04
             target: arm-unknown-linux-musleabi
-          - os_name: Linux-riscv64
-            os: ubuntu-20.04
-            target: riscv64gc-unknown-linux-gnu
+          # Does currently not build
+          # - os_name: Linux-riscv64
+          #   os: ubuntu-20.04
+          #   target: riscv64gc-unknown-linux-gnu
           - os_name: Windows-aarch64
             os: windows-latest
             target: aarch64-pc-windows-msvc
