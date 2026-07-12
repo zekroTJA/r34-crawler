@@ -5,13 +5,11 @@ use indicatif::{ProgressBar, ProgressStyle};
 use r34_api::client::{Client, Credentials, API_ROOT_URL};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use spinoff::{spinners, Color, Spinner};
-use std::{
-    fs::{self, File},
-    num::NonZeroUsize,
-    path::PathBuf,
-    sync::Arc,
-    thread,
-};
+use std::fs::{self, File};
+use std::num::NonZeroUsize;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::thread;
 
 fn page_arg_parser(v: &str) -> core::result::Result<usize, String> {
     clap_num::number_range(v, 1, 1000)

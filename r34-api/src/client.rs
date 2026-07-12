@@ -1,9 +1,9 @@
-use crate::{
-    errors::{Error, Result},
-    models::Post,
-};
+use crate::errors::{Error, Result};
+use crate::models::Post;
 use reqwest::{IntoUrl, Url};
-use std::{fs::File, io, path::Path};
+use std::fs::File;
+use std::io;
+use std::path::Path;
 
 pub const API_ROOT_URL: &str = "https://api.rule34.xxx/index.php";
 
