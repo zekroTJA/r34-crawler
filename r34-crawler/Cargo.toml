@@ -4,14 +4,14 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.86"
-clap = { version = "4.5.16", features = ["derive", "env"] }
-clap-num = "1.1.1"
+anyhow = "1.0.103"
+clap = { version = "4.6.1", features = ["derive", "env"] }
+clap-num = "1.2.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 dirs = "6.0.0"
 dotenv = "0.15.0"
-indicatif = "0.17.8"
+indicatif = "0.18.6"
 r34-api = { path = "../r34-api" }
-rayon = "1.10.0"
-serde_json = "1.0.127"
+rayon = "1.12.0"
+serde_json = "1.0.150"
 spinoff = "0.8.0"

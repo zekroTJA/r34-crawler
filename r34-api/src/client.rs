@@ -1,10 +1,9 @@
-use std::{fs::File, io, path::Path};
-
 use crate::{
     errors::{Error, Result},
     models::Post,
 };
 use reqwest::{IntoUrl, Url};
+use std::{fs::File, io, path::Path};
 
 pub const API_ROOT_URL: &str = "https://api.rule34.xxx/index.php";
 
@@ -26,6 +25,28 @@ impl Credentials {
             user_id: user_id.into(),
             api_key: api_key.into(),
         }
+    }
+}
+
+impl TryFrom<&str> for Credentials {
+    type Error = Error;
+
+    fn try_from(value: &str) -> std::prelude::v1::Result<Self, Self::Error> {
+        let value = value.trim_start_matches("&");
+        let mut user_id = None;
+        let mut api_key = None;
+        for kv in value.split("&") {
+            let (k, v) = kv.split_once("=").ok_or(Error::MalformedCredentials)?;
+            match k {
+                "user_id" => user_id = Some(v),
+                "api_key" => api_key = Some(v),
+                _ => (),
+            }
+        }
+        Ok(Credentials::new(
+            user_id.ok_or(Error::MissingCredentials("user_id"))?,
+            api_key.ok_or(Error::MissingCredentials("api_key"))?,
+        ))
     }
 }
 
@@ -122,8 +143,54 @@ mod tests {
         assert_eq!(creds.user_id, "user123");
         assert_eq!(creds.api_key, "api_key_abc");
 
-        let creds2 = Credentials::from((String::from("user456"), String::from("api_key_def")));
-        assert_eq!(creds2.user_id, "user456");
-        assert_eq!(creds2.api_key, "api_key_def");
+        let creds = Credentials::from((String::from("user456"), String::from("api_key_def")));
+        assert_eq!(creds.user_id, "user456");
+        assert_eq!(creds.api_key, "api_key_def");
+    }
+
+    #[test]
+    fn test_credentials_from_string() {
+        // OK - no trailing &
+        let creds = Credentials::try_from("api_key=foobar&user_id=baz").unwrap();
+        assert_eq!(creds.user_id, "baz");
+        assert_eq!(creds.api_key, "foobar");
+
+        // OK - trailing &
+        let creds = Credentials::try_from("&api_key=foobar&user_id=baz").unwrap();
+        assert_eq!(creds.user_id, "baz");
+        assert_eq!(creds.api_key, "foobar");
+
+        // OK - extra query args
+        let creds = Credentials::try_from("api_key=foobar&extra=asd&user_id=baz").unwrap();
+        assert_eq!(creds.user_id, "baz");
+        assert_eq!(creds.api_key, "foobar");
+
+        // ERROR - malformed
+        let err = Credentials::try_from("api_key&extra=asd&user_id=baz");
+        assert!(matches!(err, Err(Error::MalformedCredentials)));
+
+        // ERROR - empty
+        let err = Credentials::try_from("");
+        assert!(matches!(err, Err(Error::MalformedCredentials)));
+
+        // ERROR - empty with leading &
+        let err = Credentials::try_from("&");
+        assert!(matches!(err, Err(Error::MalformedCredentials)));
+
+        // ERROR - trailing &
+        let err = Credentials::try_from("api_key=foo&user_id=asd&");
+        assert!(matches!(err, Err(Error::MalformedCredentials)));
+
+        // ERROR - missing user_id
+        let err = Credentials::try_from("api_key=foo");
+        assert!(matches!(err, Err(Error::MissingCredentials("user_id"))));
+        let err = Credentials::try_from("extra=asd&api_key=foo");
+        assert!(matches!(err, Err(Error::MissingCredentials("user_id"))));
+
+        // ERROR - missing api_key
+        let err = Credentials::try_from("user_id=foo");
+        assert!(matches!(err, Err(Error::MissingCredentials("api_key"))));
+        let err = Credentials::try_from("extra=asd&user_id=foo");
+        assert!(matches!(err, Err(Error::MissingCredentials("api_key"))));
     }
 }

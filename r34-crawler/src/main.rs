@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use crossbeam::channel;
 use indicatif::{ProgressBar, ProgressStyle};
-use r34_api::client::{Client, API_ROOT_URL};
+use r34_api::client::{Client, Credentials, API_ROOT_URL};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use spinoff::{spinners, Color, Spinner};
 use std::{
@@ -24,12 +24,30 @@ struct Cli {
     tags: Vec<String>,
 
     /// User account ID
-    #[arg(short = 'U', long, env = "R34_USER_ID")]
-    user_id: String,
+    #[arg(
+        short = 'U',
+        long,
+        env = "R34_USER_ID",
+        requires = "api_key",
+        required_unless_present = "credentials",
+        conflicts_with = "credentials"
+    )]
+    user_id: Option<String>,
 
     /// User account API key
-    #[arg(short = 'A', long, env = "R34_API_KEY")]
-    api_key: String,
+    #[arg(
+        short = 'A',
+        long,
+        env = "R34_API_KEY",
+        requires = "user_id",
+        required_unless_present = "credentials",
+        conflicts_with = "credentials"
+    )]
+    api_key: Option<String>,
+
+    /// Combined credentials of user ID and API key
+    #[arg(short, long, env = "R34_CREDENTIALS", required_unless_present_any = ["user_id", "api_key"], conflicts_with_all = ["user_id", "api_key"])]
+    credentials: Option<String>,
 
     /// The output directory for downloaded images
     #[arg(short, long, default_value = "output", env = "R34_OUTPUT")]
@@ -88,7 +106,12 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let client = Client::new(API_ROOT_URL, (cli.user_id, cli.api_key))?;
+    let credentials: Credentials = match (cli.credentials, cli.user_id, cli.api_key) {
+        (Some(credentials), None, None) => credentials.as_str().try_into()?,
+        (None, Some(user_id), Some(api_key)) => (user_id, api_key).into(),
+        v => panic!("this value combination should not happen - this is a bug: {v:#?}"),
+    };
+    let client = Client::new(API_ROOT_URL, credentials)?;
 
     if !cli.output.exists() {
         fs::create_dir_all(&cli.output)?;

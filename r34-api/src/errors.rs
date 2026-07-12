@@ -12,4 +12,10 @@ pub enum Error {
 
     #[error("failed writing image: {0}")]
     OutputFile(#[from] io::Error),
+
+    #[error("malformed credentials")]
+    MalformedCredentials,
+
+    #[error("missing credentials: {0}")]
+    MissingCredentials(&'static str),
 }

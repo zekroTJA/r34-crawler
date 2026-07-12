@@ -41,7 +41,7 @@ fn get_file_ext(v: &str) -> Option<&str> {
         .enumerate()
         .find(|(_, c)| *c == '.')
         .map(|(i, _)| &v[v.len() - i..])
-        .and_then(|v| if v.is_empty() { None } else { Some(v) })
+        .filter(|v| !v.is_empty())
 }
 
 #[cfg(test)]
