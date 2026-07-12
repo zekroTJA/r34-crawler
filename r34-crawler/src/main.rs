@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use crossbeam::channel;
 use indicatif::{ProgressBar, ProgressStyle};
-use r34_api::client::Client;
+use r34_api::client::{Client, API_ROOT_URL};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use spinoff::{spinners, Color, Spinner};
 use std::{
@@ -23,36 +23,51 @@ struct Cli {
     /// Image tags
     tags: Vec<String>,
 
+    /// User account ID
+    #[arg(short = 'U', long, env = "R34_USER_ID")]
+    user_id: String,
+
+    /// User account API key
+    #[arg(short = 'A', long, env = "R34_API_KEY")]
+    api_key: String,
+
     /// The output directory for downloaded images
-    #[arg(short, long, default_value = "output")]
+    #[arg(short, long, default_value = "output", env = "R34_OUTPUT")]
     output: PathBuf,
 
     /// Number of images to be collected
-    #[arg(short, long)]
+    #[arg(short, long, env = "R34_LIMIT")]
     limit: Option<NonZeroUsize>,
 
     /// Offset to be skipped in collected images
-    #[arg(short = 'O', long)]
+    #[arg(short = 'O', long, env = "R34_OFFSET")]
     offset: Option<NonZeroUsize>,
 
     /// Query posts created after the given post ID
-    #[arg(short, long)]
+    #[arg(short, long, env = "R34_AFTER_ID")]
     after_id: Option<usize>,
 
     /// The page size used per request when listing images
-    #[arg(short, long, default_value = "250", value_parser = page_arg_parser)]
+    #[arg(short, long, default_value = "250", value_parser = page_arg_parser, env = "R34_PAGE_SIZE")]
     page_size: usize,
 
     /// Force overwriting already downloaded images
-    #[arg(long)]
+    #[arg(long, env = "R34_OVERWRITE")]
     overwrite: bool,
 
     /// Number of threads used for downloading images in parallel
-    #[arg(short, long, default_value = "4", short_alias = 'w', alias = "workers")]
-    threads: NonZeroUsize,
+    #[arg(
+        short,
+        long,
+        default_value = "4",
+        short_alias = 't',
+        alias = "threads",
+        env = "R34_WORKERS"
+    )]
+    workers: NonZeroUsize,
 
     /// Store image post metadata in the given file as JSON
-    #[arg(short, long)]
+    #[arg(short, long, env = "R34_META")]
     meta: Option<PathBuf>,
 }
 
@@ -65,7 +80,7 @@ enum Message {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let client = Client::default();
+    let client = Client::new(API_ROOT_URL, (cli.user_id, cli.api_key))?;
 
     if !cli.output.exists() {
         fs::create_dir_all(&cli.output)?;
@@ -145,7 +160,7 @@ fn main() -> Result<()> {
     });
 
     let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(cli.threads.get())
+        .num_threads(cli.workers.get())
         .build()?;
 
     let client = Arc::new(client);
