@@ -36,12 +36,7 @@ impl Post {
 }
 
 fn get_file_ext(v: &str) -> Option<&str> {
-    v.chars()
-        .rev()
-        .enumerate()
-        .find(|(_, c)| *c == '.')
-        .map(|(i, _)| &v[v.len() - i..])
-        .filter(|v| !v.is_empty())
+    v.rfind('.').map(|i| &v[i + 1..]).filter(|v| !v.is_empty())
 }
 
 #[cfg(test)]

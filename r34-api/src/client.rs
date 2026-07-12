@@ -62,19 +62,19 @@ where
 
 pub struct Client {
     root_url: Url,
-    credentíals: Credentials,
+    credentials: Credentials,
     client: reqwest::blocking::Client,
 }
 
 impl Client {
-    pub fn new<R: IntoUrl, C: Into<Credentials>>(root_url: R, credentíals: C) -> Result<Self> {
+    pub fn new<R: IntoUrl, C: Into<Credentials>>(root_url: R, credentials: C) -> Result<Self> {
         let root_url = root_url.into_url().map_err(Error::InvalidRootUrl)?;
         let client = reqwest::blocking::Client::default();
-        let credentíals = credentíals.into();
+        let credentials = credentials.into();
         Ok(Self {
             root_url,
             client,
-            credentíals,
+            credentials,
         })
     }
 
@@ -90,11 +90,17 @@ impl Client {
             .get(self.root_url.as_ref())
             .query(&DEFAULT_QUERY_PARAMS)
             .query(&[
-                ("user_id", &self.credentíals.user_id),
-                ("api_key", &self.credentíals.api_key),
+                ("user_id", &self.credentials.user_id),
+                ("api_key", &self.credentials.api_key),
             ]);
 
-        let tags_joined: String = tags.iter().map(|v| v.as_ref()).intersperse(" ").collect();
+        let mut tags_joined = String::new();
+        for (i, tag) in tags.iter().enumerate() {
+            if i > 0 {
+                tags_joined.push(' ');
+            }
+            tags_joined.push_str(tag.as_ref());
+        }
         req = req.query(&[("tags", tags_joined)]);
 
         if let Some(limit) = limit {

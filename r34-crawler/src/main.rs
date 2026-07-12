@@ -116,8 +116,8 @@ fn main() -> Result<()> {
     }
 
     let page_size = cli.page_size;
-    let mut all_posts = vec![];
     let limit = cli.limit.map(|v| v.get()).unwrap_or(usize::MAX);
+    let mut all_posts = Vec::with_capacity(limit.min(page_size));
 
     let mut spinner = Spinner::new(spinners::Dots, "[0] Collecting posts info ...", Color::Cyan);
 
@@ -130,12 +130,15 @@ fn main() -> Result<()> {
     };
 
     for page in start_page..usize::MAX {
-        let mut posts = client.posts(&cli.tags, Some(page_size), Some(page), cli.after_id)?;
+        let posts = client.posts(&cli.tags, Some(page_size), Some(page), cli.after_id)?;
         let collected = posts.len();
-        all_posts.append(&mut posts);
 
-        if all_posts.len() >= limit + rest_offset {
-            all_posts = all_posts[rest_offset..limit + rest_offset].to_vec();
+        let to_skip = if page == start_page { rest_offset } else { 0 };
+        let to_take = limit.saturating_sub(all_posts.len());
+
+        all_posts.extend(posts.into_iter().skip(to_skip).take(to_take));
+
+        if all_posts.len() >= limit {
             break;
         }
 
@@ -153,7 +156,8 @@ fn main() -> Result<()> {
 
         let f = File::create(&meta_dir)
             .map_err(|err| anyhow::anyhow!("failed creating meta file: {err}"))?;
-        serde_json::to_writer_pretty(f, &all_posts)
+        let writer = std::io::BufWriter::new(f);
+        serde_json::to_writer_pretty(writer, &all_posts)
             .map_err(|err| anyhow::anyhow!("failed encoding meta JSON: {err}"))?;
 
         spinner.stop_with_message(&format!("✔️  Meta file written to {}.", meta_dir.display()));
