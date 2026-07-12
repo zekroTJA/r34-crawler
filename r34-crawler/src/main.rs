@@ -78,6 +78,14 @@ enum Message {
 }
 
 fn main() -> Result<()> {
+    dotenv::from_filename(".env").ok();
+    dotenv::from_filename("secrets.env").ok();
+    if let Some(config_dir) = dirs::config_dir() {
+        let cfg_dir = config_dir.join("r34-crawler");
+        dotenv::from_path(cfg_dir.join(".env")).ok();
+        dotenv::from_path(cfg_dir.join("secrets.env")).ok();
+    }
+
     let cli = Cli::parse();
 
     let client = Client::new(API_ROOT_URL, (cli.user_id, cli.api_key))?;
